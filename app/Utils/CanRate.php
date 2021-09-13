@@ -35,6 +35,7 @@ trait CanRate
             'score' => $score,
             'rateable_type' => get_class($model)
         ]);
+	event(new ModelRated($this,$model,$score));
         return true;
     }
 

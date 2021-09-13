@@ -33,25 +33,31 @@ class SendNewsLetterCommand extends Command
         $emails = $this->argument('emails');
         $schedule = $this->option('schedule');
 
-        $builder = User::query();
-        
         if ($emails)
         {
-            $builder->whereIn('email',$emails);
+	  $query = User::query()->whereIn('email',$emails);
         }
-        $count = $builder->count();
+	else
+	{
+	  $query = User::query()->whereNotNull('email_verified_at');
+	}
+        $count = $query->count();
 
         if ($count)
         {
-            $this->output->progressStart($count);
-            $builder->whereNotNull('email_verified_at')
-                ->each(function (User $user)
+            $this->info("Se enviaran {$count} correos");
+	    if($this->confirm('¿Estas de acuerdo?')||$schedule)
+	    {
+            	$this->output->progressStart($count);
+            	User::query()->each(function (User $user)
                 {
                     $user->notify(new NewsletterNotification());
                     $this->output->progressAdvance();
                 });
-            $this->output->progressFinish();
-            $this->info("Se enviaron {$count} correos");
+            	$this->output->progressFinish();
+            	$this->info('Correos enviados');
+		return;
+	    }
         }
         else
         {
